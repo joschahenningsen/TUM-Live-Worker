@@ -9,14 +9,21 @@ import (
 )
 
 var (
-	Busy bool = false
+	Busy     bool = false
 	OsSignal chan os.Signal
-	WorkerID string
+	Cfg      Config
 )
 
 func main() {
 	OsSignal = make(chan os.Signal, 1)
-	WorkerID = os.Getenv("WORKERID")
+	Cfg = Config{
+		LrzUser:      os.Getenv("LRZ_USER"),
+		LrzMail:      os.Getenv("LRZ_MAIL"),
+		LrzPhone:     os.Getenv("LRZ_PHONE"),
+		LrzSubDir:    os.Getenv("LRZ_SUBDIR"),
+		LrzUploadURL: os.Getenv("LRZ_UPLOAD_URL"),
+		WorkerID:     os.Getenv("WORKERID"),
+	}
 	cronService := cron.New()
 	_, _ = cronService.AddFunc("* * * * *", convertAndUpload)
 	cronService.Start()
@@ -31,4 +38,13 @@ func LoopForever() {
 	_ = <-OsSignal
 
 	fmt.Printf("Exiting infinite loop received OsSignal\n")
+}
+
+type Config struct {
+	LrzUser      string
+	LrzMail      string
+	LrzPhone     string
+	LrzSubDir    string
+	LrzUploadURL string
+	WorkerID     string
 }
