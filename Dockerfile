@@ -8,4 +8,5 @@ FROM alpine:3.12
 RUN apk update && apk add curl && apk add ffmpeg
 WORKDIR /app
 COPY --from=build-env /app/TUM-Live-Worker .
-ENTRYPOINT ./TUM-Live-Worker
+RUN pwd&&ls -lah
+CMD /app/TUM-Live-Worker
