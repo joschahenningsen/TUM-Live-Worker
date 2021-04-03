@@ -51,20 +51,16 @@ func convertAndUpload() {
 func upload(path string, job jobData) {
 	log.Printf("Uploading %v", path)
 	pathparts := strings.Split(path, "/")
-	cmd := exec.Cmd{
-		Path: "/bin/curl",
-		Args: []string{
-			"-F", fmt.Sprintf("'benutzer=%v'", Cfg.LrzUser),
-			"-F", fmt.Sprintf("'mailadresse=%v'", Cfg.LrzMail),
-			"-F", fmt.Sprintf("'telefon=%v'", Cfg.LrzPhone),
-			"-F", "'unidir=tum'",
-			"-F", fmt.Sprintf("'subdir=%v'", Cfg.LrzSubDir),
-			"-F", fmt.Sprintf("'info='"),
-			"-F", fmt.Sprintf("'filename=@%v'", path),
-			Cfg.LrzUploadURL,
-		},
-		Dir: "/recordings/vod",
-	}
+	cmd := exec.Command("curl",
+		"-F", fmt.Sprintf("'benutzer=%v'", Cfg.LrzUser),
+		"-F", fmt.Sprintf("'mailadresse=%v'", Cfg.LrzMail),
+		"-F", fmt.Sprintf("'telefon=%v'", Cfg.LrzPhone),
+		"-F", "'unidir=tum'",
+		"-F", fmt.Sprintf("'subdir=%v'", Cfg.LrzSubDir),
+		"-F", fmt.Sprintf("'info='"),
+		"-F", fmt.Sprintf("'filename=@%v'", path),
+		Cfg.LrzUploadURL)
+
 	err := cmd.Start()
 	if err != nil {
 		log.Printf("Error starting curl: %v", err)
