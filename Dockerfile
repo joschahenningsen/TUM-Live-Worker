@@ -2,11 +2,11 @@ FROM golang:1.16 AS build-env
 WORKDIR /app
 COPY . .
 RUN go get .
-RUN go build .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o worker TUM-Live-Worker
 
 FROM alpine:3.12
 RUN apk update && apk add curl && apk add ffmpeg
 WORKDIR /app
-COPY --from=build-env /app/TUM-Live-Worker .
-RUN pwd&&ls -lah
-CMD /app/TUM-Live-Worker
+COPY --from=build-env /app/worker /app/worker
+
+CMD "./worker"
