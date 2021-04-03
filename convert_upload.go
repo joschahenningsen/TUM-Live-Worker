@@ -62,6 +62,7 @@ func upload(path string, job jobData) {
 		Cfg.LrzUploadURL)
 
 	err := cmd.Start()
+	log.Printf(cmd.String())
 	if err != nil {
 		log.Printf("Error starting curl: %v", err)
 	}
@@ -75,6 +76,7 @@ func upload(path string, job jobData) {
 		Name:     job.Name,
 		Start:    job.StreamStart,
 		HlsUrl:   "https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/" + pathparts[len(pathparts)-1] + "/playlist.m3u8",
+		FilePath: path,
 		StreamId: job.StreamId,
 	}
 	send, _ := json.Marshal(createVodData)
@@ -116,5 +118,6 @@ type putVodData struct {
 	Name     string
 	Start    time.Time
 	HlsUrl   string
+	FilePath string
 	StreamId uint
 }
