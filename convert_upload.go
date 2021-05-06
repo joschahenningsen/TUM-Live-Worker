@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os/exec"
@@ -12,43 +11,12 @@ import (
 	"time"
 )
 
-func convertAndUpload() {
-	if Busy {
-		return
-	}
-	res, err := http.Get("http://localhost:8080/api/worker/getJobs/" + Cfg.WorkerID)
-	if err != nil {
-		log.Printf("couldn't get jobs%v\n", err)
-		return
-	}
-	if res.StatusCode != 200 {
-		log.Println("no job.")
-		return
-	}
-	jsonData, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Printf("couldn't get jobs%v\n", err)
-		return
-	}
-	println(jsonData)
-	var job jobData
-	err = json.Unmarshal(jsonData, &job)
-	if err != nil {
-		log.Printf("couldn't parse job%v\n", err)
-		return
-	}
-	Busy = true
-
-	convert(job.Path)
-	newPath := strings.Replace(job.Path, ".flv", ".mp4", 1)
-	if job.Upload {
-		upload(newPath, job)
-	}
-	Busy = false
-
+func convertAndUpload(input string, output string) {
+	convert(input)
+	upload(output)
 }
 
-func upload(path string, job jobData) {
+func upload(path string) {
 	log.Printf("Uploading %v", path)
 	pathparts := strings.Split(path, "/")
 	cmd := exec.Command("curl",
@@ -73,11 +41,8 @@ func upload(path string, job jobData) {
 	}
 	log.Println("Uploaded file to lrz.")
 	createVodData := putVodData{
-		Name:     job.Name,
-		Start:    job.StreamStart,
 		HlsUrl:   "https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/" + pathparts[len(pathparts)-1] + "/playlist.m3u8",
 		FilePath: path,
-		StreamId: job.StreamId,
 	}
 	send, _ := json.Marshal(createVodData)
 	_, err = http.Post("http://backend:8080/api/worker/putVOD/"+Cfg.WorkerID,

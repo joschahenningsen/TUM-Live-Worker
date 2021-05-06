@@ -2,14 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/robfig/cron/v3"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
 var (
-	Busy     bool = false
+	Workload = 0
 	OsSignal chan os.Signal
 	Cfg      Config
 )
@@ -23,10 +22,10 @@ func main() {
 		LrzSubDir:    os.Getenv("LRZ_SUBDIR"),
 		LrzUploadURL: os.Getenv("LRZ_UPLOAD_URL"),
 		WorkerID:     os.Getenv("WORKERID"),
+		IngestBase:   os.Getenv("INGEST_BASE"),
+		MainBase:     os.Getenv("MAIN_BASE"),
 	}
-	cronService := cron.New()
-	_, _ = cronService.AddFunc("* * * * *", convertAndUpload)
-	cronService.Start()
+	configRouter()
 	LoopForever()
 }
 
@@ -47,4 +46,6 @@ type Config struct {
 	LrzSubDir    string
 	LrzUploadURL string
 	WorkerID     string
+	IngestBase   string
+	MainBase     string
 }
