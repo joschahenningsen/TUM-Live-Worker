@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -27,7 +29,8 @@ func main() {
 		Cert:         os.Getenv("CERT"),
 		Key:          os.Getenv("KEY"),
 	}
-	println(Cfg.WorkerID)
+	marshal, _ := json.Marshal(Cfg)
+	log.Printf("starting worker. Config: %s", string(marshal))
 	configRouter()
 	LoopForever()
 }
