@@ -49,7 +49,7 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 		err := cmd.Start()
 		if err != nil {
 			log.Printf("error while processing: %v\n", err)
-			return
+			continue
 		}
 		streamJobs[fmt.Sprintf("%s%s", StreamName, SourceName)] = cmd.Process
 		log.Println(cmd.Process.Pid)
@@ -66,7 +66,7 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 		if err != nil {
 			log.Printf("Error while waiting: %v\n", err)
 			delete(streamJobs, fmt.Sprintf("%s%s", StreamName, SourceName))
-			return
+			continue
 		}
 		delete(streamJobs, fmt.Sprintf("%s%s", StreamName, SourceName))
 	}
