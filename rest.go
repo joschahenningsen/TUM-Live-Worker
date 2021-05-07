@@ -16,7 +16,7 @@ func configRouter() {
 		}
 	})
 	mainGroup.POST("/streamLectureHall", streamLectureHall)
-	err := server.RunTLS(":433", Cfg.Cert, Cfg.Key)
+	err := server.RunTLS(":443", Cfg.Cert, Cfg.Key)
 	if err != nil {
 		panic(err)
 	}
