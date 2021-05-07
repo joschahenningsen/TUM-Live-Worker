@@ -37,7 +37,7 @@ func stream(req streamLectureHallRequest) {
 func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl string, streamEnd time.Time, streamID string) {
 	Workload += 2
 	defer func() { Workload -= 2 }() // todo possible race condition?
-	for streamEnd.After(time.Now()) || streamEnd.Equal(time.Now()) {
+	for streamEnd.After(time.Now()) {
 		log.Println("starting stream")
 		cmd := exec.Command(
 			"ffmpeg", "-nostats", "-rtsp_transport", "tcp",

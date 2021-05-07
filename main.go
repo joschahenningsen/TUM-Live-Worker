@@ -24,7 +24,10 @@ func main() {
 		WorkerID:     os.Getenv("WORKERID"),
 		IngestBase:   os.Getenv("INGEST_BASE"),
 		MainBase:     os.Getenv("MAIN_BASE"),
+		Cert:         os.Getenv("CERT"),
+		Key:          os.Getenv("KEY"),
 	}
+	println(Cfg.WorkerID)
 	configRouter()
 	LoopForever()
 }
@@ -48,4 +51,6 @@ type Config struct {
 	WorkerID     string
 	IngestBase   string
 	MainBase     string
+	Cert         string
+	Key          string
 }

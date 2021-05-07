@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func configRouter()  {
+func configRouter() {
 	server := gin.Default()
 	// Middleware to reject all requests that don't contain the valid workerID.
 	mainGroup := server.Group("/:workerID/")
@@ -16,7 +16,7 @@ func configRouter()  {
 		}
 	})
 	mainGroup.POST("/streamLectureHall", streamLectureHall)
-	err := server.Run(":80")
+	err := server.RunTLS(":433", Cfg.Cert, Cfg.Key)
 	if err != nil {
 		panic(err)
 	}
