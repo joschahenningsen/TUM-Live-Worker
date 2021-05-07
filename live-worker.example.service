@@ -1,0 +1,16 @@
+[Unit]
+Description=TUM-Live-Worker
+After=network.target
+
+[Service]
+EnvironmentFile=/path/to/worker.env
+Type=simple
+ExecStart=/bin/live-worker
+TimeoutStopSec=5
+KillMode=mixed
+Restart=on-failure
+StandardOutput=append:/var/log/live-worker/logs.log
+StandardError=append:/var/log/live-worker/error.log
+
+[Install]
+WantedBy=multi-user.target
