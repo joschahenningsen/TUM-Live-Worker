@@ -41,17 +41,22 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 		log.Println("starting stream")
 		cmd := exec.Command(
 			"ffmpeg", "-nostats", "-rtsp_transport", "tcp",
-			"-i", fmt.Sprintf("rtsp://%s", SourceUrl),
 			"-t", fmt.Sprintf("%.0f", streamEnd.Sub(time.Now()).Seconds()), // timeout ffmpeg when stream is finished
+			"-i", fmt.Sprintf("rtsp://%s", SourceUrl),
 			"-map", "0", "-c", "copy", "-f", "mpegts", "-", "-c:v", "libx264", "-preset", "veryfast", "-maxrate", "1500k", "-bufsize", "3000k", "-g", "50", "-r", "25", "-c:a", "aac", "-ar", "44100", "-b:a", "128k",
-			"-f", "flv", fmt.Sprintf("%s%s%s >> /recordings/vod/%v%v.ts", Cfg.IngestBase, StreamName, SourceName, StreamName, SourceName))
+			"-f", "flv", fmt.Sprintf("%s%s%s", Cfg.IngestBase, StreamName, SourceName))
 		log.Println(cmd.String())
-		err := cmd.Start()
+		outfile, err := os.OpenFile(fmt.Sprintf("/recordings/vod/%v%v.ts", StreamName, SourceName), os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Printf("Can't write to disk! %v", err)
+			break
+		}
+		cmd.Stdout = outfile
+		err = cmd.Start()
 		if err != nil {
 			log.Printf("error while processing: %v\n", err)
 			continue
 		}
-		streamJobs[fmt.Sprintf("%s%s", StreamName, SourceName)] = cmd.Process
 		log.Println(cmd.Process.Pid)
 		notifyLiveBody, _ := json.Marshal(notifyLiveRequest{
 			StreamID: streamID,
