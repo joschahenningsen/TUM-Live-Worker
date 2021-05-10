@@ -41,6 +41,7 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 		log.Println("starting stream")
 		cmd := exec.Command(
 			"ffmpeg", "-nostats", "-rtsp_transport", "tcp",
+			"-stimeout", fmt.Sprintf("%v", streamEnd.Sub(time.Now()).Microseconds()),
 			"-t", fmt.Sprintf("%.0f", streamEnd.Sub(time.Now()).Seconds()), // timeout ffmpeg when stream is finished
 			"-i", fmt.Sprintf("rtsp://%s", SourceUrl),
 			"-map", "0", "-c", "copy", "-f", "mpegts", "-", "-c:v", "libx264", "-preset", "veryfast", "-maxrate", "1500k", "-bufsize", "3000k", "-g", "50", "-r", "25", "-c:a", "aac", "-ar", "44100", "-b:a", "128k",
@@ -76,6 +77,15 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 		delete(streamJobs, fmt.Sprintf("%s%s", StreamName, SourceName))
 	}
 	log.Printf("finished streaming %v%v", StreamName, SourceName)
+	notifyStreamEnd(streamID)
+	//convert(fmt.Sprintf("/recordings/vod/%v%v.ts", StreamName, SourceName))
+}
+
+func notifyStreamEnd(id string) {
+	_, err := http.Post(fmt.Sprintf("%s/api/worker/notifyLiveEnd/%s/%v", Cfg.MainBase, Cfg.WorkerID, id), "application.json", bytes.NewBuffer([]byte{}))
+	if err != nil {
+		log.Printf("couldn't notify server about stream end: %v\n", err)
+	}
 }
 
 type streamLectureHallRequest struct {

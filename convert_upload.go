@@ -45,7 +45,7 @@ func upload(path string) {
 		FilePath: path,
 	}
 	send, _ := json.Marshal(createVodData)
-	_, err = http.Post("http://backend:8080/api/worker/putVOD/"+Cfg.WorkerID,
+	_, err = http.Post(fmt.Sprintf("https://%s/api/worker/putVOD/%s", Cfg.MainBase, Cfg.WorkerID),
 		"application/json",
 		bytes.NewBuffer(send))
 	if err != nil {
