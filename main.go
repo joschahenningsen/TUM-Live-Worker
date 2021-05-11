@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/robfig/cron/v3"
 	"log"
 	"os"
 	"os/signal"
@@ -30,6 +31,8 @@ func main() {
 		Key:          os.Getenv("KEY"),
 	}
 	marshal, _ := json.Marshal(Cfg)
+	cronService := cron.New()
+	_, _ = cronService.AddFunc("0-59/5 * * * *", ping)
 	log.Printf("starting worker. Config: %s", string(marshal))
 	configRouter()
 	LoopForever()
