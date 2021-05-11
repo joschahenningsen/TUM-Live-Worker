@@ -36,7 +36,13 @@ func stream(req streamLectureHallRequest) {
 
 func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl string, streamEnd time.Time, streamID string) {
 	Workload += 2
-	defer func() { Workload -= 2 }() // todo possible race condition?
+	Status = fmt.Sprintf("Streaming %v until %v", StreamName, streamEnd)
+	go ping()
+	defer func() {
+		Workload -= 2
+		Status = "idle"
+		ping()
+	}() // todo possible race condition?
 	for streamEnd.After(time.Now()) {
 		log.Println("starting stream")
 		cmd := exec.Command(

@@ -12,6 +12,7 @@ import (
 
 var (
 	Workload = 0
+	Status = "idle"
 	OsSignal chan os.Signal
 	Cfg      Config
 )
