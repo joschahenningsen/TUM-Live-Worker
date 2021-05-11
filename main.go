@@ -34,6 +34,7 @@ func main() {
 	cronService := cron.New()
 	_, _ = cronService.AddFunc("0-59/5 * * * *", ping)
 	log.Printf("starting worker. Config: %s", string(marshal))
+	cronService.Start()
 	configRouter()
 	LoopForever()
 }
