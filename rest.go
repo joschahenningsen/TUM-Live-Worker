@@ -7,6 +7,9 @@ import (
 
 func configRouter() {
 	server := gin.Default()
+	server.GET("/", func(context *gin.Context) {
+		context.Status(http.StatusOK)
+	})
 	// Middleware to reject all requests that don't contain the valid workerID.
 	mainGroup := server.Group("/:workerID/")
 	mainGroup.Use(func(c *gin.Context) {
