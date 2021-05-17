@@ -38,7 +38,7 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 	Workload += 2
 	Status = fmt.Sprintf("Streaming %v until %v", StreamName, streamEnd)
 	go ping()
-	for streamEnd.After(time.Now().Add(time.Minute * 10)) {
+	for time.Now().Before(streamEnd.Add(time.Minute * 10)) {
 		log.Println("starting stream")
 		cmd := exec.Command(
 			"ffmpeg", "-nostats", "-rtsp_transport", "tcp",
