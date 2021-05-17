@@ -74,9 +74,17 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 		if err != nil {
 			log.Printf("Error while waiting: %v\n", err)
 			delete(streamJobs, fmt.Sprintf("%s%s", StreamName, SourceName))
+			err := outfile.Close()
+			if err != nil {
+				log.Printf("Couldn't close outfile: %s\n", err)
+			}
 			continue
 		}
 		delete(streamJobs, fmt.Sprintf("%s%s", StreamName, SourceName))
+		err = outfile.Close()
+		if err != nil {
+			log.Printf("Couldn't close outfile: %s\n", err)
+		}
 	}
 	log.Printf("finished streaming %v%v", StreamName, SourceName)
 	Workload -= 2
