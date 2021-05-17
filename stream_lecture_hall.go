@@ -30,20 +30,15 @@ func streamLectureHall(context *gin.Context) {
 func stream(req streamLectureHallRequest) {
 	for sourceName, sourceUrl := range req.Sources {
 		log.Printf("%v:%v\n", sourceName, sourceUrl)
-		go streamSingleLectureSource(req.StreamName, sourceName, sourceUrl, req.StreamEnd, req.ID)
+		go streamSingleLectureSource(req.StreamName, sourceName, sourceUrl, req.StreamEnd, req.ID, req.Upload, req.ID)
 	}
 }
 
-func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl string, streamEnd time.Time, streamID string) {
+func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl string, streamEnd time.Time, streamID string, uploadRec bool, StreamID string) {
 	Workload += 2
 	Status = fmt.Sprintf("Streaming %v until %v", StreamName, streamEnd)
 	go ping()
-	defer func() {
-		Workload -= 2
-		Status = "idle"
-		ping()
-	}() // todo possible race condition?
-	for streamEnd.After(time.Now()) {
+	for streamEnd.After(time.Now().Add(time.Minute * 10)) {
 		log.Println("starting stream")
 		cmd := exec.Command(
 			"ffmpeg", "-nostats", "-rtsp_transport", "tcp",
@@ -83,8 +78,14 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 		delete(streamJobs, fmt.Sprintf("%s%s", StreamName, SourceName))
 	}
 	log.Printf("finished streaming %v%v", StreamName, SourceName)
+	Workload -= 2
+	Status = "idle"
+	ping()
 	notifyStreamEnd(streamID)
-	//convert(fmt.Sprintf("/recordings/vod/%v%v.ts", StreamName, SourceName))
+	convert(fmt.Sprintf("/recordings/vod/%v%v.ts", StreamName, SourceName), fmt.Sprintf("/srv/cephfs/livestream/rec/TUM-Live/vod/%s%s.mp4", StreamName, SourceName))
+	if uploadRec {
+		upload(fmt.Sprintf("/srv/cephfs/livestream/rec/TUM-Live/vod/%s%s.mp4", StreamName, SourceName), StreamID, SourceName)
+	}
 }
 
 func notifyStreamEnd(id string) {
@@ -99,6 +100,7 @@ type streamLectureHallRequest struct {
 	StreamEnd  time.Time         `json:"streamEnd"`
 	StreamName string            `json:"streamName"`
 	ID         string            `json:"id"`
+	Upload     bool              `json:"upload"`
 }
 
 type notifyLiveRequest struct {
