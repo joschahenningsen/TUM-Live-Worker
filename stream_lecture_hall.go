@@ -37,8 +37,9 @@ func stream(req streamLectureHallRequest) {
 func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl string, streamEnd time.Time, streamID string, uploadRec bool, StreamID string) {
 	Workload += 2
 	Status = fmt.Sprintf("Streaming %v until %v", StreamName, streamEnd)
+	streamEnd = streamEnd.Add(time.Minute * 10)
 	go ping()
-	for time.Now().Before(streamEnd.Add(time.Minute * 10)) {
+	for time.Now().Before(streamEnd) {
 		log.Println("starting stream")
 		cmd := exec.Command(
 			"ffmpeg", "-nostats", "-rtsp_transport", "tcp",
