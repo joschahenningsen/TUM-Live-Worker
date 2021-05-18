@@ -43,7 +43,6 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 		log.Println("starting stream")
 		cmd := exec.Command(
 			"ffmpeg", "-nostats", "-rtsp_transport", "tcp",
-			"-stimeout", fmt.Sprintf("%v", streamEnd.Sub(time.Now()).Microseconds()),
 			"-t", fmt.Sprintf("%.0f", streamEnd.Sub(time.Now()).Seconds()), // timeout ffmpeg when stream is finished
 			"-i", fmt.Sprintf("rtsp://%s", SourceUrl),
 			"-map", "0", "-c", "copy", "-f", "mpegts", "-", "-c:v", "libx264", "-preset", "veryfast", "-maxrate", "1500k", "-bufsize", "3000k", "-g", "50", "-r", "25", "-c:a", "aac", "-ar", "44100", "-b:a", "128k",
