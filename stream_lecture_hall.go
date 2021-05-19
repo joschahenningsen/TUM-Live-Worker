@@ -48,7 +48,7 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 			"-map", "0", "-c", "copy", "-f", "mpegts", "-", "-c:v", "libx264", "-preset", "veryfast", "-maxrate", "1500k", "-bufsize", "3000k", "-g", "50", "-r", "25", "-c:a", "aac", "-ar", "44100", "-b:a", "128k",
 			"-f", "flv", fmt.Sprintf("%s%s%s", Cfg.IngestBase, StreamName, SourceName))
 		log.Println(cmd.String())
-		outfile, err := os.OpenFile(fmt.Sprintf("/recordings/vod/%v%v.ts", StreamName, SourceName), os.O_CREATE|os.O_WRONLY, 0644)
+		outfile, err := os.OpenFile(fmt.Sprintf("/recordings/vod/%v%v.ts", StreamName, SourceName), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 		if err != nil {
 			log.Printf("Can't write to disk! %v", err)
 			break
@@ -73,7 +73,7 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 		if err != nil {
 			log.Printf("Error while waiting: %v\n", err)
 			delete(streamJobs, fmt.Sprintf("%s%s", StreamName, SourceName))
-			err := outfile.Close()
+			err = outfile.Close()
 			if err != nil {
 				log.Printf("Couldn't close outfile: %s\n", err)
 			}
