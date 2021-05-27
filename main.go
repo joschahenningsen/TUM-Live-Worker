@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"TUM-Live-Worker/model"
 	"fmt"
 	"github.com/robfig/cron/v3"
 	"log"
@@ -12,12 +12,15 @@ import (
 
 var (
 	Workload = 0
-	Status = "idle"
+	Status   = "idle"
 	OsSignal chan os.Signal
 	Cfg      Config
+	Jobs     []model.Job
 )
 
 func main() {
+	log.Println("Starting worker")
+	Jobs = []model.Job{}
 	OsSignal = make(chan os.Signal, 1)
 	Cfg = Config{
 		LrzUser:      os.Getenv("LRZ_USER"),
@@ -31,12 +34,12 @@ func main() {
 		Cert:         os.Getenv("CERT"),
 		Key:          os.Getenv("KEY"),
 	}
-	marshal, _ := json.Marshal(Cfg)
 	cronService := cron.New()
 	_, _ = cronService.AddFunc("0-59/5 * * * *", ping)
-	log.Printf("starting worker. Config: %s", string(marshal))
 	cronService.Start()
 	configRouter()
+	/*sd := silencedetect.New("/home/joscha/Desktop/out.ts")
+	sd.ParseSilence()*/
 	LoopForever()
 }
 

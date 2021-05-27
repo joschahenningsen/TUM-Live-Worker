@@ -1,6 +1,7 @@
 package main
 
 import (
+	"TUM-Live-Worker/model"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -9,7 +10,7 @@ import (
 )
 
 func ping() {
-	req := pingReq{Status: Status, Workload: Workload}
+	req := model.PingReq{Workload: Workload, Jobs: Jobs}
 	marshal, err := json.Marshal(&req)
 	if err != nil {
 		log.Printf("couldn't marshal ping request")
@@ -20,9 +21,4 @@ func ping() {
 		log.Println("Couldn't ping main")
 		return
 	}
-}
-
-type pingReq struct {
-	Workload int    `json:"workload,omitempty"`
-	Status   string `json:"status,omitempty"`
 }
