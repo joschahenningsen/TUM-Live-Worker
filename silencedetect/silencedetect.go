@@ -1,7 +1,7 @@
 package silencedetect
 
 import (
-	"TUM-Live-Worker/model"
+	"github.com/joschahenningsen/TUM-Live-Worker/model"
 	"log"
 	"os/exec"
 	"regexp"
@@ -12,7 +12,7 @@ import (
 
 type SilenceDetect struct {
 	Input    string
-	Silences *[]model.silence
+	Silences *[]model.Silence
 }
 
 func New(input string) *SilenceDetect {
@@ -28,7 +28,7 @@ func (s *SilenceDetect) ParseSilence() error {
 		return err
 	}
 	l := strings.Split(string(output), "\n")
-	var silences []model.silence
+	var silences []model.Silence
 	startRe, _ := regexp.Compile("silence_start: [0-9]+(\\.[0-9]+)?")
 	endRe, _ := regexp.Compile("silence_end: [0-9]+(\\.[0-9]+)? \\| silence_duration: [0-9]+(\\.[0-9]+)?")
 	for _, str := range l {
@@ -38,7 +38,7 @@ func (s *SilenceDetect) ParseSilence() error {
 				log.Printf("%v", err)
 				return err
 			}
-			silences = append(silences, model.silence{
+			silences = append(silences, model.Silence{
 				Start: uint(start),
 				End:   0,
 			})

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"TUM-Live-Worker/model"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live-Worker/model"
 	"log"
 	"net/http"
 )

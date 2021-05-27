@@ -1,8 +1,8 @@
 package main
 
 import (
-	"TUM-Live-Worker/model"
 	"fmt"
+	"github.com/joschahenningsen/TUM-Live-Worker/model"
 	"github.com/robfig/cron/v3"
 	"log"
 	"os"
