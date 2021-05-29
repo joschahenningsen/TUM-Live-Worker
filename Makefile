@@ -1,5 +1,5 @@
 all:
-	go build ./...
+	go build
 
 install:
 	sudo mv TUM-Live-Worker /bin/liveworker
