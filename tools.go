@@ -10,7 +10,7 @@ import (
 )
 
 func ping() {
-	req := model.PingReq{Workload: Workload, Jobs: Jobs}
+	req := model.PingReq{Workload: Workload, Status: Status}
 	marshal, err := json.Marshal(&req)
 	if err != nil {
 		log.Printf("couldn't marshal ping request")
