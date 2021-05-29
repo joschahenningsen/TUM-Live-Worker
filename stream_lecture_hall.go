@@ -1,6 +1,7 @@
 package main
 
 import (
+	"TUM-Live-Worker/silencedetect"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -93,6 +94,15 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 	convert(fmt.Sprintf("/recordings/vod/%v%v.ts", StreamName, SourceName), fmt.Sprintf("/srv/cephfs/livestream/rec/TUM-Live/vod/%s%s.mp4", StreamName, SourceName))
 	if uploadRec {
 		upload(fmt.Sprintf("/srv/cephfs/livestream/rec/TUM-Live/vod/%s%s.mp4", StreamName, SourceName), StreamID, SourceName)
+	}
+	if SourceName == "PRES" { // todo
+		sd := silencedetect.New(fmt.Sprintf("/srv/cephfs/livestream/rec/TUM-Live/vod/%s%s.mp4", StreamName, SourceName))
+		err := sd.ParseSilence()
+		if err != nil {
+			log.Printf("%v", err)
+		} else {
+			notifySilenceDetectionResults(sd.Silences, streamID)
+		}
 	}
 }
 

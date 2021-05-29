@@ -1,13 +1,11 @@
 package silencedetect
 
 import (
-	"github.com/joschahenningsen/TUM-Live-Worker/model"
+	"TUM-Live-Worker/model"
 	"log"
 	"os/exec"
-	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type SilenceDetect struct {
@@ -20,48 +18,61 @@ func New(input string) *SilenceDetect {
 }
 
 func (s *SilenceDetect) ParseSilence() error {
-	log.Println("Start detecting silence in eist2021_05_20_08_00COMB")
-	cmd := exec.Command("ffmpeg", "-nostats", "-i", s.Input, "-af", "silencedetect=n=-30dB:d=10", "-f", "null", "-")
+	log.Printf("Start detecting silence in %s", s.Input)
+	cmd := exec.Command("nice", "ffmpeg", "-nostats", "-i", s.Input, "-af", "silencedetect=n=-15dB:d=30", "-f", "null", "-")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("%v", err)
 		return err
 	}
+	log.Println(string(output))
 	l := strings.Split(string(output), "\n")
 	var silences []model.Silence
-	startRe, _ := regexp.Compile("silence_start: [0-9]+(\\.[0-9]+)?")
-	endRe, _ := regexp.Compile("silence_end: [0-9]+(\\.[0-9]+)? \\| silence_duration: [0-9]+(\\.[0-9]+)?")
 	for _, str := range l {
-		if startRe.MatchString(str) {
+		if strings.Contains(str, "silence_start:") {
 			start, err := strconv.ParseFloat(strings.Split(str, "silence_start: ")[1], 32)
 			if err != nil {
-				log.Printf("%v", err)
 				return err
 			}
 			silences = append(silences, model.Silence{
 				Start: uint(start),
 				End:   0,
 			})
-		} else if endRe.MatchString(str) {
+		} else if strings.Contains(str, "silence_end:") {
 			end, err := strconv.ParseFloat(strings.Split(strings.Split(str, "silence_end: ")[1], " |")[0], 32)
 			if err != nil || silences == nil || len(silences) == 0 {
-				log.Printf("%v", err)
 				return err
 			}
 			silences[len(silences)-1].End = uint(end)
-			silences[len(silences)-1].Len = time.Duration(uint(end)-silences[len(silences)-1].Start) * time.Millisecond * 1000
 		}
 	}
-	for _, curSilence := range silences {
-		log.Printf("[found silence]: %v->%v Duration: %v", curSilence.Start, curSilence.End, curSilence.Len)
-	}
+
 	s.Silences = &silences
 	s.postprocess()
+	slc := *s.Silences
+	for _, silence := range slc {
+		log.Printf("%v, %v", silence.Start, silence.End)
+	}
 	return nil
 }
 
+//postprocess merges short duration of sound into units of silence
 func (s *SilenceDetect) postprocess() {
-	if len(*s.Silences) < 2 {
+	oldSilences := *s.Silences
+	if len(oldSilences) < 2 {
 		return
 	}
+	if oldSilences[0].Start < 30 {
+		oldSilences[0].Start = 0
+	}
+	newSilences := []model.Silence{{Start: oldSilences[0].Start, End: oldSilences[0].Start}}
+	oldPtr := 0
+	for oldPtr < len(oldSilences) {
+		if oldSilences[oldPtr].Start-newSilences[len(newSilences)-1].End < 30 { // Ignore sound that's shorter than 30 seconds
+			newSilences[len(newSilences)-1].End = oldSilences[oldPtr].End
+		} else {
+			newSilences = append(newSilences, oldSilences[oldPtr])
+		}
+		oldPtr++
+	}
+	s.Silences = &newSilences
 }

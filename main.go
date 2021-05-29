@@ -1,8 +1,8 @@
 package main
 
 import (
+	"TUM-Live-Worker/model"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live-Worker/model"
 	"github.com/robfig/cron/v3"
 	"log"
 	"os"
@@ -38,8 +38,6 @@ func main() {
 	_, _ = cronService.AddFunc("0-59/5 * * * *", ping)
 	cronService.Start()
 	configRouter()
-	/*sd := silencedetect.New("/home/joscha/Desktop/out.ts")
-	sd.ParseSilence()*/
 	LoopForever()
 }
 

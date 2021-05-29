@@ -1,10 +1,10 @@
 package main
 
 import (
+	"TUM-Live-Worker/model"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/joschahenningsen/TUM-Live-Worker/model"
 	"log"
 	"net/http"
 )
@@ -20,5 +20,19 @@ func ping() {
 	if err != nil {
 		log.Println("Couldn't ping main")
 		return
+	}
+}
+
+func notifySilenceDetectionResults(silences *[]model.Silence, streamID string) {
+	reqObj := model.SilenceReq{Silences: *silences, StreamID: streamID}
+	req, err := json.Marshal(reqObj)
+	if err != nil {
+		log.Printf("%v", err)
+		return
+	}
+	log.Println(string(req))
+	_, err = http.Post(fmt.Sprintf("%v/api/worker/silenceResults/%v", Cfg.MainBase, Cfg.WorkerID), "application/json", bytes.NewBuffer(req))
+	if err != nil {
+		log.Printf("%v", err)
 	}
 }
