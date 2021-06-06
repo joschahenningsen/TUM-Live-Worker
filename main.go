@@ -31,8 +31,6 @@ func main() {
 		WorkerID:     os.Getenv("WORKERID"),
 		IngestBase:   os.Getenv("INGEST_BASE"),
 		MainBase:     os.Getenv("MAIN_BASE"),
-		Cert:         os.Getenv("CERT"),
-		Key:          os.Getenv("KEY"),
 	}
 	cronService := cron.New()
 	_, _ = cronService.AddFunc("0-59/5 * * * *", ping)

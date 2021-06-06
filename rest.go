@@ -22,7 +22,7 @@ func configRouter() {
 	})
 	mainGroup.POST("/streamLectureHall", streamLectureHall)
 	mainGroup.POST("/detectSilence", detectSilence)
-	err := server.RunTLS(":443", Cfg.Cert, Cfg.Key)
+	err := server.Run(":8081")
 	if err != nil {
 		panic(err)
 	}
