@@ -31,13 +31,13 @@ func streamLectureHall(context *gin.Context) {
 func stream(req streamLectureHallRequest) {
 	for sourceName, sourceUrl := range req.Sources {
 		log.Printf("%v:%v\n", sourceName, sourceUrl)
-		go streamSingleLectureSource(req.StreamName, sourceName, sourceUrl, req.StreamEnd, req.ID, req.Upload, req.ID)
+		go streamSingleLectureSource(sourceName, sourceUrl, req.StreamEnd, req.ID, req.Upload, req.ID, req)
 	}
 }
 
-func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl string, streamEnd time.Time, streamID string, uploadRec bool, StreamID string) {
+func streamSingleLectureSource(SourceName string, SourceUrl string, streamEnd time.Time, streamID string, uploadRec bool, StreamID string, req streamLectureHallRequest) {
 	Workload += 2
-	Status = fmt.Sprintf("Streaming %v until %v", StreamName, streamEnd)
+	Status = fmt.Sprintf("Streaming %v until %v", req.StreamName, streamEnd)
 	streamEnd = streamEnd.Add(time.Minute * 10)
 	go ping()
 	for time.Now().Before(streamEnd) {
@@ -47,9 +47,9 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 			"-t", fmt.Sprintf("%.0f", streamEnd.Sub(time.Now()).Seconds()), // timeout ffmpeg when stream is finished
 			"-i", fmt.Sprintf("rtsp://%s", SourceUrl),
 			"-map", "0", "-c", "copy", "-f", "mpegts", "-", "-c:v", "libx264", "-preset", "veryfast", "-maxrate", "1500k", "-bufsize", "3000k", "-g", "50", "-r", "25", "-c:a", "aac", "-ar", "44100", "-b:a", "128k",
-			"-f", "flv", fmt.Sprintf("%s%s%s", Cfg.IngestBase, StreamName, SourceName))
+			"-f", "flv", fmt.Sprintf("%s%s%s", Cfg.IngestBase, req.StreamName, SourceName))
 		log.Println(cmd.String())
-		outfile, err := os.OpenFile(fmt.Sprintf("/recordings/vod/%v%v.ts", StreamName, SourceName), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+		outfile, err := os.OpenFile(fmt.Sprintf("/recordings/vod/%v%v.ts", req.StreamName, SourceName), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 		if err != nil {
 			log.Printf("Can't write to disk! %v", err)
 			break
@@ -63,7 +63,7 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 		log.Println(cmd.Process.Pid)
 		notifyLiveBody, _ := json.Marshal(notifyLiveRequest{
 			StreamID: streamID,
-			URL:      fmt.Sprintf("https://live.stream.lrz.de/livetum/%v%v/playlist.m3u8", StreamName, SourceName),
+			URL:      fmt.Sprintf("https://live.stream.lrz.de/livetum/%v%v/playlist.m3u8", req.StreamName, SourceName),
 			Version:  SourceName,
 		})
 		_, err = http.Post(fmt.Sprintf("%v/api/worker/notifyLive/%v", Cfg.MainBase, Cfg.WorkerID), "application/json", bytes.NewBuffer(notifyLiveBody))
@@ -73,30 +73,37 @@ func streamSingleLectureSource(StreamName string, SourceName string, SourceUrl s
 		err = cmd.Wait()
 		if err != nil {
 			log.Printf("Error while waiting: %v\n", err)
-			delete(streamJobs, fmt.Sprintf("%s%s", StreamName, SourceName))
+			delete(streamJobs, fmt.Sprintf("%s%s", req.StreamName, SourceName))
 			err = outfile.Close()
 			if err != nil {
 				log.Printf("Couldn't close outfile: %s\n", err)
 			}
 			continue
 		}
-		delete(streamJobs, fmt.Sprintf("%s%s", StreamName, SourceName))
+		delete(streamJobs, fmt.Sprintf("%s%s", req.StreamName, SourceName))
 		err = outfile.Close()
 		if err != nil {
 			log.Printf("Couldn't close outfile: %s\n", err)
 		}
 	}
-	log.Printf("finished streaming %v%v", StreamName, SourceName)
+	log.Printf("finished streaming %v%v", req.StreamName, SourceName)
 	Workload -= 2
 	Status = "idle"
 	ping()
 	notifyStreamEnd(streamID)
-	convert(fmt.Sprintf("/recordings/vod/%v%v.ts", StreamName, SourceName), fmt.Sprintf("/srv/cephfs/livestream/rec/TUM-Live/vod/%s%s.mp4", StreamName, SourceName))
-	if uploadRec {
-		upload(fmt.Sprintf("/srv/cephfs/livestream/rec/TUM-Live/vod/%s%s.mp4", StreamName, SourceName), StreamID, SourceName)
+	targetFolder := fmt.Sprintf("/srv/cephfs/livestream/rec/TUM-Live/%d/%s/%s/%s", req.Semester, req.TeachingTerm, req.Slug, req.StreamName)
+	err := os.MkdirAll(targetFolder, 0750)
+	if err != nil {
+		log.Printf("Could not create target folder: %v", err)
+		return
 	}
-	if SourceName == "PRES" { // todo
-		sd := silencedetect.New(fmt.Sprintf("/srv/cephfs/livestream/rec/TUM-Live/vod/%s%s.mp4", StreamName, SourceName))
+	targetFile := fmt.Sprintf("%s/%s%s.mp4", targetFolder, req.StreamName, SourceName)
+	convert(fmt.Sprintf("/recordings/vod/%v%v.ts", req.StreamName, SourceName), targetFile)
+	if uploadRec {
+		upload(targetFile, StreamID, SourceName)
+	}
+	if len(req.Sources) == 1 || SourceName == "PRES" {
+		sd := silencedetect.New(targetFile)
 		err := sd.ParseSilence()
 		if err != nil {
 			log.Printf("%v", err)
@@ -114,11 +121,14 @@ func notifyStreamEnd(id string) {
 }
 
 type streamLectureHallRequest struct {
-	Sources    map[string]string `json:"sources"` //CAM->123.4.5.6/extron5
-	StreamEnd  time.Time         `json:"streamEnd"`
-	StreamName string            `json:"streamName"`
-	ID         string            `json:"id"`
-	Upload     bool              `json:"upload"`
+	Sources      map[string]string `json:"sources"` //CAM->123.4.5.6/extron5
+	StreamEnd    time.Time         `json:"streamEnd"`
+	StreamName   string            `json:"streamName"`
+	ID           string            `json:"id"`
+	Upload       bool              `json:"upload"`
+	Semester     int               `json:"semester"`
+	TeachingTerm string            `json:"teachingTerm"`
+	Slug         string            `json:"slug"`
 }
 
 type notifyLiveRequest struct {
